@@ -71,5 +71,5 @@ require(["vs/editor/editor.main"], function () {
   });
 
   // ejecutar al iniciar
-  runSafe(saved);
+  runSafe(savedCode);
 });
