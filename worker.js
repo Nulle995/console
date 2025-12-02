@@ -1,4 +1,4 @@
-// Importar TypeScript dentro del worker
+// TypeScript dentro del worker
 importScripts(
   "https://cdnjs.cloudflare.com/ajax/libs/typescript/5.3.3/typescript.min.js"
 );
@@ -17,8 +17,11 @@ onmessage = (e) => {
       compilerOptions: { module: ts.ModuleKind.ESNext },
     }).outputText;
 
-    // Ejecutar JS
-    eval(jsCode);
+    // Ejecutar JS aislado
+    new Function(jsCode)();
+
+    // avisar que terminó correctamente
+    postMessage({ type: "done" });
   } catch (err) {
     postMessage({ type: "error", value: String(err) });
   }

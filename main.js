@@ -1,21 +1,44 @@
-let worker = new Worker("worker.js");
+let worker = null;
 const consoleDiv = document.getElementById("console");
 
-// Recibir logs del worker
-worker.onmessage = (e) => {
-  const msg = e.data;
+function writeToConsole(msg, isError = false) {
   const p = document.createElement("div");
-
-  if (msg.type === "log") {
-    p.textContent = msg.value;
-  } else if (msg.type === "error") {
-    p.style.color = "red";
-    p.textContent = msg.value;
-  }
-
+  if (isError) p.style.color = "red";
+  p.textContent = msg;
   consoleDiv.appendChild(p);
   consoleDiv.scrollTop = consoleDiv.scrollHeight;
-};
+}
+
+// Crear y ejecutar un worker nuevo por ejecución
+function runCodeInWorker(code) {
+  // matar worker viejo si existe
+  if (worker) worker.terminate();
+
+  // nuevo worker
+  worker = new Worker("worker.js");
+
+  // timeout anti-loop infinito (1 segundo)
+  const safety = setTimeout(() => {
+    writeToConsole("⛔ Ejecución detenida (posible bucle infinito)");
+    worker.terminate();
+  }, 1000);
+
+  // recibir logs / errores del worker
+  worker.onmessage = (e) => {
+    const msg = e.data;
+
+    if (msg.type === "log") {
+      writeToConsole(msg.value);
+    } else if (msg.type === "error") {
+      writeToConsole(msg.value, true);
+    } else if (msg.type === "done") {
+      clearTimeout(safety);
+    }
+  };
+
+  // enviar el código a ejecutar
+  worker.postMessage(code);
+}
 
 // Cargar Monaco
 require.config({
@@ -23,8 +46,9 @@ require.config({
 });
 
 require(["vs/editor/editor.main"], function () {
-  // 1. Leer código guardado (o poner algo por defecto si quieres)
-  const savedCode = localStorage.getItem("editorCode") || "";
+  const savedCode =
+    localStorage.getItem("editorCode") ||
+    "// Escribe TypeScript 🎄\nconsole.log('Hola!')";
 
   const editor = monaco.editor.create(document.getElementById("editor"), {
     value: savedCode,
@@ -34,33 +58,22 @@ require(["vs/editor/editor.main"], function () {
     fontFamily: "Fira Code",
     fontLigatures: true,
     minimap: { enabled: false },
-    lineNumbers: "on",
   });
 
-  // 2. Función reutilizable para ejecutar el código del editor
   function runCode() {
     consoleDiv.innerHTML = "";
-    const code = editor.getValue().trim();
-    if (!code) return; // si está vacío, no hagas nada
-
-    // Guardar siempre la última versión
+    const code = editor.getValue();
     localStorage.setItem("editorCode", code);
-
-    // Enviar al worker para que lo ejecute
-    worker.postMessage(code);
+    runCodeInWorker(code);
   }
 
-  // 3. Debounce al escribir
-  let timeout;
+  // Debounce
+  let t;
   editor.onDidChangeModelContent(() => {
-    clearTimeout(timeout);
-    timeout = setTimeout(() => {
-      runCode();
-    }, 500);
+    clearTimeout(t);
+    t = setTimeout(runCode, 500);
   });
 
-  // 4. Ejecutar automáticamente el código que había en localStorage al iniciar
-  if (savedCode.trim()) {
-    runCode();
-  }
+  // Ejecutar al iniciar
+  runCode();
 });
