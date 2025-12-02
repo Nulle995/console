@@ -1,50 +1,47 @@
 let worker = null;
 const consoleDiv = document.getElementById("console");
 
-function writeToConsole(msg, isError = false) {
-  const p = document.createElement("div");
-  if (isError) p.style.color = "red";
-  p.textContent = msg;
-  consoleDiv.appendChild(p);
+function writeToConsole(msg, error = false) {
+  const div = document.createElement("div");
+  if (error) div.style.color = "red";
+  div.textContent = msg;
+  consoleDiv.appendChild(div);
   consoleDiv.scrollTop = consoleDiv.scrollHeight;
 }
 
-// Crear y ejecutar un worker nuevo por ejecución
-function runCodeInWorker(code) {
-  // matar worker viejo si existe
+function runSafe(code) {
+  // matar worker anterior si existe
   if (worker) worker.terminate();
 
-  // nuevo worker
+  // crear un worker nuevo
   worker = new Worker("worker.js");
 
-  // timeout anti-loop infinito (1 segundo)
+  // timeout de seguridad
   const safety = setTimeout(() => {
-    writeToConsole("⛔ Ejecución detenida (posible bucle infinito)");
+    writeToConsole("⛔ Código detenido: posible loop infinito");
     worker.terminate();
-  }, 1000);
+  }, 500); // medio segundo suficiente
 
-  // recibir logs / errores del worker
   worker.onmessage = (e) => {
-    const msg = e.data;
+    const m = e.data;
 
-    if (msg.type === "log") {
-      writeToConsole(msg.value);
-    } else if (msg.type === "error") {
-      writeToConsole(msg.value, true);
-    } else if (msg.type === "done") {
+    if (m.type === "log") {
+      writeToConsole(m.value);
+    } else if (m.type === "error") {
+      writeToConsole(m.value, true);
+      clearTimeout(safety);
+    } else if (m.type === "done") {
       clearTimeout(safety);
     }
   };
 
-  // enviar el código a ejecutar
   worker.postMessage(code);
 }
 
-// Cargar Monaco
+// Configuración de Monaco igual
 require.config({
   paths: { vs: "https://cdn.jsdelivr.net/npm/monaco-editor@0.45.0/min/vs" },
 });
-
 require(["vs/editor/editor.main"], function () {
   const savedCode =
     localStorage.getItem("editorCode") ||
@@ -60,20 +57,17 @@ require(["vs/editor/editor.main"], function () {
     minimap: { enabled: false },
   });
 
-  function runCode() {
-    consoleDiv.innerHTML = "";
-    const code = editor.getValue();
-    localStorage.setItem("editorCode", code);
-    runCodeInWorker(code);
-  }
-
-  // Debounce
   let t;
   editor.onDidChangeModelContent(() => {
     clearTimeout(t);
-    t = setTimeout(runCode, 500);
+    t = setTimeout(() => {
+      const code = editor.getValue();
+      localStorage.setItem("editorCode", code);
+      consoleDiv.innerHTML = "";
+      runSafe(code);
+    }, 700);
   });
 
-  // Ejecutar al iniciar
-  runCode();
+  // ejecutar al iniciar
+  runSafe(saved);
 });
