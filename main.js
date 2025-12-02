@@ -41,8 +41,6 @@ function runSafe(code) {
   worker.postMessage(code);
 }
 
-runSafe(savedCode);
-
 // Configuración de Monaco igual
 require.config({
   paths: { vs: "https://cdn.jsdelivr.net/npm/monaco-editor@0.45.0/min/vs" },
