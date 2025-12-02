@@ -1,5 +1,8 @@
 let worker = null;
 const consoleDiv = document.getElementById("console");
+const savedCode =
+  localStorage.getItem("editorCode") ||
+  "// Escribe TypeScript 🎄\nconsole.log('Hola!')";
 
 function writeToConsole(msg, error = false) {
   const div = document.createElement("div");
@@ -38,15 +41,13 @@ function runSafe(code) {
   worker.postMessage(code);
 }
 
+runSafe(savedCode);
+
 // Configuración de Monaco igual
 require.config({
   paths: { vs: "https://cdn.jsdelivr.net/npm/monaco-editor@0.45.0/min/vs" },
 });
 require(["vs/editor/editor.main"], function () {
-  const savedCode =
-    localStorage.getItem("editorCode") ||
-    "// Escribe TypeScript 🎄\nconsole.log('Hola!')";
-
   const editor = monaco.editor.create(document.getElementById("editor"), {
     value: savedCode,
     language: "typescript",
@@ -58,6 +59,7 @@ require(["vs/editor/editor.main"], function () {
   });
 
   let t;
+
   editor.onDidChangeModelContent(() => {
     clearTimeout(t);
     t = setTimeout(() => {
