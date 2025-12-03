@@ -3,77 +3,38 @@
   <head>
     <meta charset="UTF-8" />
     <title>TS Runner con Monaco</title>
+
     <style>
       body {
         margin: 0;
         display: flex;
-        height: 100vh;
+        height: 100dvh;
       }
-
       #editor {
         width: 50%;
-        height: 100%;
+        height: 100dvh;
       }
-
-      /* CONSOLE estilo Monaco */
       #console {
         width: 50%;
-        height: 100%;
-        padding: 12px;
-        background: #1e1e1e; /* igual que vs-dark */
-        color: #d4d4d4;
-        font-family: "Fira Code", Consolas, monospace;
-        font-size: 15px;
-        line-height: 22px;
-        overflow-y: auto;
-        white-space: pre-wrap;
-        border-left: 1px solid #333;
-      }
-      #console {
+        height: 100dvh;
+        padding-left: 12px;
         background: #1e1e1e;
         color: #cccccc;
-      }
-
-      #console .log {
-        color: #dcdcdc;
-      }
-
-      #console .error {
-        color: #f44747; /* mismo que VSCode */
-      }
-      #console {
-        box-sizing: border-box;
-        border-left: 1px solid #3c3c3c;
-      }
-
-      #console::-webkit-scrollbar {
-        width: 10px;
-      }
-
-      #console::-webkit-scrollbar-thumb {
-        background: #3b3b3b;
-        border-radius: 4px;
-      }
-
-      #console::-webkit-scrollbar-track {
-        background: #1e1e1e;
-      }
-      #console div {
-        border-bottom: 1px solid rgba(255, 255, 255, 0.06);
-        padding-bottom: 4px;
-      }
-      #console div:hover {
-        background: rgba(255, 255, 255, 0.03);
+        font-family: "Fira Code", monospace;
+        font-size: 15px;
+        overflow-y: auto;
+        white-space: pre-wrap;
       }
     </style>
 
-    <!-- Monaco Editor desde CDN -->
+    <!-- Cargar AMD loader.js -->
     <script src="https://cdn.jsdelivr.net/npm/monaco-editor@0.45.0/min/vs/loader.js"></script>
   </head>
+
   <body>
     <div id="editor"></div>
     <div id="console"></div>
 
-    <script src="main.js"></script>
+    <script src="./main.js"></script>
   </body>
 </html>
